@@ -4,7 +4,8 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {levels} from '../src/levels.js';
 const url=process.env.BASE_URL||'http://127.0.0.1:4187/';
 const report={url,results:[]};
-for(const [name,type] of Object.entries({chromium,webkit,firefox})) {
+const engines=process.env.TEST_FIREFOX==='1'?{chromium,webkit,firefox}:{chromium,webkit};
+for(const [name,type] of Object.entries(engines)) {
  const browser=await type.launch();
  try {
   const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});

@@ -1,5 +1,28 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {Platform} from '../src/platform.js';import {SaveStore,parseSave,emptySave} from '../src/save.js';
+import {levels} from '../src/levels.js';import {initialDraft} from '../src/engine.js';
+test('retry recovers untouched defaults but merges explicit per-cell edits and preferences, even during the read',async()=>{
+ const draft=initialDraft(levels[11]);for(const key of Object.keys(draft.routes))draft.routes[key]='R';
+ for(const key of Object.keys(draft.waits))draft.waits[key]=true;
+ const original={...emptySave(),completed:[11],last:12,language:'en',muted:true,drafts:{12:draft}};
+ let recover;const store=new SaveStore({load:()=>new Promise(resolve=>recover=resolve)});
+ const loading=store.load();
+ // A user can edit while a slow retry is still reading. Only that cell wins.
+ const route=Object.keys(draft.routes)[0];
+ store.update({last:12,language:'zh',muted:false,completed:[1],drafts:{12:{routes:{[route]:'S'}}}});
+ recover(JSON.stringify(original));await loading;
+ assert.equal(store.data.last,12);assert.equal(store.data.language,'zh');assert.equal(store.data.muted,false);
+ assert.deepEqual(store.data.completed,[1,11]);
+ assert.deepEqual(store.data.drafts[12],{routes:{...draft.routes,[route]:'S'},waits:draft.waits});
+});
+test('explicit reset to initial values wins over recovered routes and waits',async()=>{
+ const original=initialDraft(levels[11]);for(const key of Object.keys(original.routes))original.routes[key]='R';
+ for(const key of Object.keys(original.waits))original.waits[key]=true;
+ let blocked=true;
+ const store=new SaveStore({load:async()=>{if(blocked)throw Error('offline');return JSON.stringify({...emptySave(),completed:[11],last:12,drafts:{12:original}});}});
+ await store.load();store.update({drafts:{12:initialDraft(levels[11])}});blocked=false;await store.load();
+ assert.deepEqual(store.data.drafts[12],initialDraft(levels[11]));
+});
 function fake(){const calls=[],handlers={};let raw='';return {calls,handlers,get raw(){return raw;},set raw(v){raw=v;},IN_PLAYABLES_ENV:true,
  game:{firstFrameReady(){calls.push('first');},gameReady(){calls.push('ready');},async loadData(){calls.push('load');return raw;},async saveData(v){calls.push('save');raw=v;}},
  system:{isAudioEnabled:()=>false,onPause:fn=>handlers.pause=fn,onResume:fn=>handlers.resume=fn,onAudioEnabledChange:fn=>handlers.audio=fn,getLanguage:async()=> 'zh-CN'}};}

@@ -15,6 +15,24 @@ async function setSolution(page,l){
 }
 async function run(page,status='success'){await page.locator('#start').click();await expect.poll(async()=>(await read(page)).state.status).toBe(status);}
 async function seed(page,last=12){await page.addInitScript(data=>localStorage.setItem('tiny-dispatch-v1',JSON.stringify(data)),{...emptySave(),completed:Array.from({length:12},(_,i)=>i+1),last});}
+async function assertSignTargets(page){
+ const failures=await page.locator('.sign').evaluateAll(buttons=>{
+  const errors=[],rects=buttons.map(b=>b.getBoundingClientRect());
+  buttons.forEach((b,i)=>{
+   const r=rects[i];
+   for(let j=i+1;j<buttons.length;j++){
+    const s=rects[j];
+    if(Math.min(r.right,s.right)-Math.max(r.left,s.left)>.1&&Math.min(r.bottom,s.bottom)-Math.max(r.top,s.top)>.1)errors.push(`overlap ${b.dataset.cell} / ${buttons[j].dataset.cell}`);
+   }
+   // Test the left/right/top/bottom interior as well as centre, not just nominal sizes.
+   for(const [x,y] of [[r.left+2,r.top+r.height/2],[r.right-2,r.top+r.height/2],[r.left+r.width/2,r.top+2],[r.left+r.width/2,r.bottom-2],[r.left+r.width/2,r.top+r.height/2]]){
+    if(document.elementFromPoint(x,y)?.closest('.sign')!==b)errors.push(`wrong target ${b.dataset.cell} at ${x},${y}`);
+   }
+  });
+  return errors;
+ });
+ expect(failures).toEqual([]);
+}
 function noErrors(page){const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});return errors;}
 
 test('real controls solve all 12 levels, unlock next, celebrate, replay, and reload',async({page})=>{
@@ -80,23 +98,45 @@ test('fake SDK: readiness, load failure guard, platform pause cannot be locally 
  await page.evaluate(()=>window.mockSDK.failLoad=false);await page.locator('#save-retry').click();await expect.poll(()=>page.evaluate(()=>window.mockSDK.saved!==null)).toBe(true);
  const saved=JSON.parse(await page.evaluate(()=>window.mockSDK.saved));expect(saved.language).toBeUndefined();
 });
-for(const [width,height,label] of [[1440,900,'desktop'],[390,844,'portrait'],[360,800,'portrait-small'],[844,390,'landscape'],[320,568,'compact'],[667,375,'landscape-small']])test(`viewport ${label}: visible essentials, touch controls, no overflow or errors`,async({browser})=>{
+for(const [width,height,label] of [[1440,900,'desktop'],[390,844,'portrait'],[360,800,'portrait-small'],[844,390,'landscape'],[320,568,'compact'],[667,375,'landscape-small'],[568,320,'landscape-compact']])test(`viewport ${label}: visible essentials, touch controls, no overflow or errors`,async({browser})=>{
  const context=await browser.newContext({viewport:{width,height},hasTouch:true,isMobile:width<500,reducedMotion:'reduce'});const page=await context.newPage();const errors=noErrors(page);await seed(page,12);await open(page);
  for(const language of ['zh','en']){
   if(language==='en')await page.locator('#language').tap();
   const bounds=await page.evaluate(()=>({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}));expect(bounds.width).toBeLessThanOrEqual(width);expect(bounds.height).toBeLessThanOrEqual(height);
-  for(const id of ['map','start','pause','reset','sound','language']){
+  for(const id of ['map','start','pause','reset','sound','language','save-status','feedback']){
    const b=await page.locator('#'+id).boundingBox();expect(b.x).toBeGreaterThanOrEqual(0);expect(b.y).toBeGreaterThanOrEqual(0);expect(b.x+b.width).toBeLessThanOrEqual(width+1);expect(b.y+b.height).toBeLessThanOrEqual(height+1);
   }
+  await assertSignTargets(page);
  }
  await page.locator('#hint').tap();await expect(page.locator('#hint-panel')).toBeVisible();
  await page.locator('.hint-close').tap();await expect(page.locator('#hint-panel')).toBeHidden();
  await page.evaluate(()=>window.scrollTo(0,0));
  await page.locator('.junction').first().tap();expect((await read(page)).history).toBeUndefined();
+ if(label==='landscape-small'||label==='landscape-compact'){
+  // The reported left-interior point of the central junction used to edit its neighbour.
+  const junction=page.locator('.junction[data-cell="3,3"]'),box=await junction.boundingBox();
+  const before=(await read(page)).draft;await page.touchscreen.tap(box.x+2,box.y+box.height/2);
+  const after=(await read(page)).draft;expect(after.routes['3,3']).not.toBe(before.routes['3,3']);expect(after.waits).toEqual(before.waits);
+ }
  mkdirSync('artifacts',{recursive:true});await page.screenshot({path:`artifacts/${label}.png`});
  await run(page,'failed');
  const failedBounds=await page.evaluate(()=>({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}));
  expect(failedBounds.width).toBeLessThanOrEqual(width);expect(failedBounds.height).toBeLessThanOrEqual(height);
  if(label==='compact')await page.screenshot({path:'artifacts/compact-failure.png'});
+ if(label==='landscape-small'||label==='landscape-compact'){
+  await page.evaluate(()=>{Storage.prototype.setItem=()=>{throw Error('quota');};});
+  await page.locator('.junction').first().tap();await expect(page.locator('#save-retry')).toBeVisible();
+  for(const language of ['en','zh']){
+   if(language==='zh')await page.locator('#language').tap();
+   const bounds=await page.evaluate(()=>({width:document.documentElement.scrollWidth,height:document.documentElement.scrollHeight}));
+   expect(bounds.width).toBeLessThanOrEqual(width);expect(bounds.height).toBeLessThanOrEqual(height);
+   for(const selector of ['.save-line','#save-retry','#feedback','#start','.planning-tools button']){
+    for(const control of await page.locator(selector).all()){
+     const b=await control.boundingBox();expect(b.y).toBeGreaterThanOrEqual(0);expect(b.y+b.height).toBeLessThanOrEqual(height);
+    }
+   }
+  }
+  await page.screenshot({path:`artifacts/${label}-save-error.png`});
+ }
  expect(errors).toEqual([]);await context.close();
 });

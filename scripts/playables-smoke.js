@@ -19,7 +19,7 @@ try{
  await page.goto(server.url);await page.waitForFunction(()=>window.sdkEvidence.events.includes('ready-interactable'));
  assert.equal(await page.locator('#title').textContent(),'Tiny Dispatch');
  let evidence=await page.evaluate(()=>({events:window.sdkEvidence.events,writes:window.sdkEvidence.writes}));
- assert.equal(evidence.events[0],'first-on-loading');assert.ok(evidence.events.indexOf('load')<evidence.events.indexOf('save'));assert.ok(!evidence.events.includes('visibility'));
+ assert.equal(evidence.events[0],'first-on-loading');assert.ok(evidence.events.includes('load'));assert.equal(evidence.writes.length,0,'boot must not persist default drafts');assert.ok(!evidence.events.includes('visibility'));
  await page.locator('.junction').press('ArrowRight');await page.locator('#start').click();await page.evaluate(()=>window.sdkEvidence.handlers.pause());
  const beat=await page.locator('#beat-number').textContent(),image=await page.locator('canvas').screenshot();await page.waitForTimeout(150);
  assert.equal(await page.locator('#beat-number').textContent(),beat);assert.deepEqual(await page.locator('canvas').screenshot(),image);
@@ -28,5 +28,6 @@ try{
  assert.equal(await page.locator('#sound').getAttribute('aria-pressed'),'true');
  assert.deepEqual(external,['https://www.youtube.com/game_api/v1']);assert.deepEqual(errors,[]);
  evidence=await page.evaluate(()=>({events:window.sdkEvidence.events,writes:window.sdkEvidence.writes.length}));
+ assert.ok(evidence.writes>0,'user route edits and earned progress are saved');
  const result={passed:true,testOnlyMock:true,officialCertification:false,...evidence};writeFileSync('artifacts/playables-smoke.json',JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify(result,null,2));
 }finally{await browser.close();await server.close();}

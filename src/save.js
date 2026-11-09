@@ -23,14 +23,32 @@ export function parseSave(raw) {
   }catch{return {data:emptySave(),status:'corrupt'};}
 }
 export class SaveStore {
-  constructor(platform,onStatus=()=>{}) {this.platform=platform;this.data=emptySave();this.status='loading';this.onStatus=onStatus;this.queue=Promise.resolve();this.writable=false;}
+  constructor(platform,onStatus=()=>{}) {this.platform=platform;this.data=emptySave();this.changes={drafts:{}};this.status='loading';this.onStatus=onStatus;this.queue=Promise.resolve();this.writable=false;}
+  // Only explicit user changes enter this journal. Merely displaying a default
+  // board must not give it precedence over a temporarily unreadable save.
+  update(patch) {
+    for(const key of ['last','language','muted'])if(Object.hasOwn(patch,key))this.data[key]=this.changes[key]=patch[key];
+    if(patch.completed)this.data.completed=[...new Set([...this.data.completed,...patch.completed])].sort((a,b)=>a-b);
+    for(const [id,draft] of Object.entries(patch.drafts??{})) {
+      this.data.drafts[id]??=initialDraft(levels[Number(id)-1]);
+      this.changes.drafts[id]??={routes:{},waits:{}};
+      for(const kind of ['routes','waits']) {
+        Object.assign(this.data.drafts[id][kind],draft[kind]);
+        Object.assign(this.changes.drafts[id][kind],draft[kind]);
+      }
+    }
+  }
   setStatus(s){this.status=s;this.onStatus(s);}
   async load() {
     try {
       const result=parseSave(await this.platform.load());
-      // A successful retry merges remote progress with progress earned in this session.
-      const local=this.data;
-      this.data={...result.data,completed:[...new Set([...result.data.completed,...local.completed])].sort((a,b)=>a-b),drafts:{...result.data.drafts,...local.drafts}};
+      const completed=[...new Set([...result.data.completed,...this.data.completed])].sort((a,b)=>a-b);
+      const changes=this.changes;
+      this.data=result.data;
+      // Read the journal after the await so edits made during a slow retry also
+      // win, while untouched cells and preferences come from recovered storage.
+      this.update({...changes,completed});
+      if(result.status!=='incompatible')this.changes={drafts:{}};
       this.writable=result.status!=='incompatible';
       this.setStatus(result.status);
       return this.data;

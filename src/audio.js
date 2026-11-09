@@ -1,16 +1,37 @@
 export class Sound {
-  constructor(platform) {this.platform=platform;this.muted=false;this.context=null;this.suspended=false;}
+  constructor(platform,onChange=()=>{}) {this.platform=platform;this.onChange=onChange;this.muted=false;this.context=null;this.suspended=false;this.unlocked=false;this.active=platform.audio;}
+  get allowed(){return !this.muted&&!this.suspended&&this.platform.audio;}
+  get blocked(){return this.allowed&&Boolean(this.context)&&this.context.state!=='running';}
+  resume() {
+    if(!this.allowed||!this.context)return;
+    // Some browsers reject resume, others leave it pending until a gesture.
+    // The icon follows the actual state in either case; a click can retry.
+    this.context.resume().catch(()=>{}).finally(()=>this.onChange());
+    this.onChange();
+  }
   unlock() {
-    if(this.muted||!this.platform.audio||this.suspended)return;
+    if(!this.allowed)return;
     const Audio=globalThis.AudioContext||globalThis.webkitAudioContext;
     if(!Audio)return;
-    this.context??=new Audio();
-    if(this.context.state==='suspended')this.context.resume().catch(()=>{});
+    if(!this.context||this.context.state==='closed') {
+      this.context=new Audio();
+      this.context.addEventListener('statechange',()=>{
+        if(this.context.state==='running') {
+          this.unlocked=true;
+          // A pending resume may settle after the platform pauses again.
+          if(!this.allowed)this.context.suspend().catch(()=>{});
+        }
+        this.onChange();
+      });
+    }
+    if(this.context.state==='running')this.unlocked=true;
+    else this.resume();
   }
   sync(muted,paused) {
-    this.muted=muted;this.suspended=paused;
-    if((muted||paused||!this.platform.audio)&&this.context)this.context.suspend().catch(()=>{});
-    // Resumption is only attempted on the next explicit user gesture.
+    const wasAllowed=this.active;
+    this.muted=muted;this.suspended=paused;this.active=this.allowed;
+    if(!this.allowed&&this.context)this.context.suspend().catch(()=>{});
+    else if(!wasAllowed&&this.allowed&&this.unlocked)this.resume();
   }
   play(kind) {
     if(this.muted||this.suspended||!this.platform.audio||this.context?.state!=='running')return;

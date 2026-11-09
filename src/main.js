@@ -21,7 +21,7 @@ let storage;try{storage=window.localStorage;}catch{/* The save layer reports blo
 const platform=new Platform({sdk:window.ytgame,storage,document});
 let lang='zh';
 const store=new SaveStore(platform,()=>renderSave());
-const sound=new Sound(platform);
+const sound=new Sound(platform,()=>render());
 const app={
  level:levels[0],draft:initialDraft(levels[0]),state:initialState(levels[0]),pending:null,elapsed:0,
  beatMs:import.meta.env.DEV?Number(import.meta.env.VITE_BEAT_MS)||650:650,
@@ -37,8 +37,7 @@ const app={
    if(this.elapsed<this.beatMs)return;
    const before=this.state;this.state=this.pending;this.elapsed=0;this.pending=null;
    if(this.state.status==='success'){
-     if(!store.data.completed.includes(this.level.id))store.data.completed.push(this.level.id);
-     persist();sound.play('delivery');
+     persist({completed:[this.level.id],last:this.level.id});sound.play('delivery');
    }else if(this.state.status==='failed')sound.play('failure');
    else {
      if(this.state.vans.some((v,i)=>v.done&&!before.vans[i].done))sound.play('delivery');
@@ -47,26 +46,24 @@ const app={
    render();
  }
 };
-const t=()=>copy[lang];
+const compactLayout=matchMedia('(max-height:500px) and (min-width:501px)');
+const t=()=>compactLayout.matches?{...copy[lang],...copy[lang].compact}:copy[lang];
 const localized=arr=>arr[lang==='zh'?0:1];
 function unlocked(id){return id===1||store.data.completed.includes(id)||store.data.completed.includes(id-1);}
-function persist(){
- store.data.last=app.level.id;store.data.drafts[app.level.id]=structuredClone(app.draft);
- store.data.language=lang;store.data.muted=sound.muted;store.save();
-}
-function loadLevel(id){
+function persist(patch){store.update(patch);store.save();}
+function loadLevel(id,remember=true){
  app.level=levels[id-1];app.draft=structuredClone(store.data.drafts[id]??initialDraft(app.level));
  app.state=initialState(app.level);app.state.status='planning';app.pending=null;app.elapsed=0;app.ownPause=false;app.history=[];app.hint=false;
- buildSigns();app.scene?.paint();render();syncPause();persist();
+ buildSigns();app.scene?.paint();render();syncPause();if(remember)persist({last:id});
 }
 function plan(){app.pending=null;app.state=initialState(app.level);app.state.status='planning';app.elapsed=0;app.ownPause=false;syncPause();}
-function dispatch(){plan();sound.unlock();sound.play('dispatch');app.state.status='running';app.pending=step(app.level,app.draft,app.state);render();}
+function dispatch(){plan();persist({last:app.level.id});sound.unlock();sound.play('dispatch');app.state.status='running';app.pending=step(app.level,app.draft,app.state);render();}
 function editable(){return !platform.paused&&!app.ownPause&&!app.pending&&app.state.status!=='running';}
 function editDraft(kind,k,value){
  if(!editable())return;
  if(app.state.status!=='planning')plan();
  app.history.push(structuredClone(app.draft));app.draft[kind][k]=value;
- render();persist();
+ render();persist({last:app.level.id,drafts:{[app.level.id]:{[kind]:{[k]:value}}}});
 }
 function buildSigns(){
  const layer=$('signs');layer.replaceChildren();
@@ -101,8 +98,9 @@ function render(){
  document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.documentElement.dataset.status=s.status;document.title=`${c.title} · ${app.level.id}/12`;
  $('title').textContent=c.title;$('language').textContent=c.language;
  $('progress').textContent=`${store.data.completed.length} / 12`;$('level-select').setAttribute('aria-label',`${c.levels} · ${store.data.completed.length} / 12 ${c.progress}`);
- iconButton('sound',sound.muted||!platform.audio?'mute':'sound',sound.muted||!platform.audio?c.mute:c.sound);
- $('sound').setAttribute('aria-pressed',String(sound.muted||!platform.audio));
+ const quiet=sound.muted||!platform.audio||sound.blocked;
+ iconButton('sound',quiet?'mute':'sound',sound.blocked?c.audioRetry:quiet?c.mute:c.sound);
+ $('sound').setAttribute('aria-pressed',String(quiet));
  iconButton('help','help',c.help);iconButton('back','back',c.back);iconButton('forward','forward',c.forward);
  $('back').disabled=app.level.id===1||paused||Boolean(app.pending);$('forward').disabled=app.level.id===12||!unlocked(app.level.id+1)||paused||Boolean(app.pending);
  $('level-number').textContent=`${String(app.level.id).padStart(2,'0')} / 12`;
@@ -150,11 +148,17 @@ $('start').onclick=()=>{
 };
 $('retry').onclick=dispatch;
 $('pause').onclick=()=>{if(platform.paused)return;app.ownPause=!app.ownPause;syncPause();if(!app.ownPause)sound.unlock();};
-$('undo').onclick=()=>{if(!editable()||!app.history.length)return;plan();app.draft=app.history.pop();render();persist();};
-$('reset').onclick=()=>{if(!editable())return;app.history.push(structuredClone(app.draft));plan();app.draft=initialDraft(app.level);render();persist();};
+$('undo').onclick=()=>{
+ if(!editable()||!app.history.length)return;
+ const before=app.draft,changes={routes:{},waits:{}};
+ plan();app.draft=app.history.pop();
+ for(const kind of ['routes','waits'])for(const [k,value] of Object.entries(app.draft[kind]))if(before[kind][k]!==value)changes[kind][k]=value;
+ render();persist({last:app.level.id,drafts:{[app.level.id]:changes}});
+};
+$('reset').onclick=()=>{if(!editable())return;app.history.push(structuredClone(app.draft));plan();app.draft=initialDraft(app.level);render();persist({last:app.level.id,drafts:{[app.level.id]:app.draft}});};
 $('hint').onclick=()=>{app.hint=!app.hint;render();};
-$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';render();persist();};
-$('sound').onclick=()=>{sound.muted=!sound.muted;syncPause();if(!sound.muted)sound.unlock();persist();};
+$('language').onclick=()=>{lang=lang==='zh'?'en':'zh';render();persist({language:lang});};
+$('sound').onclick=()=>{if(sound.blocked){sound.unlock();return;}sound.muted=!sound.muted;syncPause();if(!sound.muted)sound.unlock();persist({muted:sound.muted});};
 $('back').onclick=()=>loadLevel(app.level.id-1);$('forward').onclick=()=>loadLevel(app.level.id+1);
 function showDialog(id){if(app.pending){app.ownPause=true;syncPause();}$(id).showModal();}
 $('help').onclick=()=>showDialog('help-dialog');$('close-help').onclick=()=>$('help-dialog').close();
@@ -168,7 +172,16 @@ $('level-select').onclick=()=>{
  }));showDialog('levels-dialog');
 };
 $('close-levels').onclick=()=>$('levels-dialog').close();
-$('save-retry').onclick=async()=>{if(store.status==='load-failed'){await store.load();persist();render();}else await store.save();};
+$('save-retry').onclick=async()=>{
+ if(store.status==='load-failed'){
+  const data=await store.load();
+  if(!store.writable)return;
+  if(!platform.playables)lang=data.language;
+  sound.muted=data.muted;loadLevel(data.last,false);
+ }
+ await store.save();
+};
+compactLayout.addEventListener('change',()=>render());
 matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',e=>{app.reduced=e.matches;});
 if(import.meta.env.DEV)window.__dispatch={read:()=>structuredClone({level:app.level.id,draft:app.draft,state:app.state,paused:app.ownPause||platform.paused,platformPaused:platform.paused,completed:store.data.completed,saveStatus:store.status,platform:platform.playables,pending:Boolean(app.pending)})};
 // Loading text is already painted in HTML. Notify on that real display, before asynchronous save loading.
@@ -176,6 +189,6 @@ async function boot(){
  await new Promise(resolve=>requestAnimationFrame(resolve));platform.firstFrameReady();
  const [data,locale]=await Promise.all([store.load(),platform.language()]);
  lang=platform.playables?locale:data.language;sound.muted=data.muted;
- loadLevel(data.last);app.game=createGame(app);
+ loadLevel(data.last,false);app.game=createGame(app);
 }
 boot();
