@@ -1,0 +1,27 @@
+{
+  "name": "tiny-dispatch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Chryui <193886991+Cherry7593@users.noreply.github.com>",
+  "scripts": {
+    "dev": "vite --config vite/config.dev.mjs",
+    "test": "node --test tests/*.test.js",
+    "verify:levels": "node scripts/verify-levels.js",
+    "build": "vite build --config vite/config.prod.mjs",
+    "build:playables": "vite build --config vite/config.prod.mjs --mode playables",
+    "test:e2e": "playwright test",
+    "smoke": "node scripts/smoke.js",
+    "smoke:playables": "node scripts/playables-smoke.js",
+    "package:playables": "node scripts/package.js"
+  },
+  "dependencies": {
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "terser": "5.44.1",
+    "vite": "6.4.6"
+  }
+}

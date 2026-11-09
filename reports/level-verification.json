@@ -1,0 +1,504 @@
+{
+  "method": "Exhaustive Cartesian product of all relative-turn signs (S/L/R) and wait toggles. Deterministic synchronous simulation, 64-beat bound.",
+  "totalConfigurations": 100128,
+  "levels": [
+    {
+      "id": 1,
+      "name": "A turn for home",
+      "checked": 3,
+      "solutions": 1,
+      "minTicks": 6,
+      "solution": {
+        "routes": {
+          "4,1": "R"
+        },
+        "waits": {}
+      },
+      "outcomes": {
+        "offroad": 2,
+        "success": 1
+      },
+      "junctions": 1,
+      "pads": 0,
+      "initialStatus": "failed",
+      "initialFailure": "offroad",
+      "negativeCases": [
+        {
+          "reason": "offroad",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Crossing paths",
+      "checked": 3,
+      "solutions": 1,
+      "minTicks": 6,
+      "solution": {
+        "routes": {
+          "3,3": "S"
+        },
+        "waits": {}
+      },
+      "outcomes": {
+        "success": 1,
+        "depot": 1,
+        "swap": 1
+      },
+      "junctions": 1,
+      "pads": 0,
+      "initialStatus": "success",
+      "initialFailure": null,
+      "negativeCases": [
+        {
+          "reason": "depot",
+          "count": 1
+        },
+        {
+          "reason": "swap",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "After you",
+      "checked": 6,
+      "solutions": 1,
+      "minTicks": 7,
+      "solution": {
+        "routes": {
+          "3,3": "S"
+        },
+        "waits": {
+          "1,3": true
+        }
+      },
+      "outcomes": {
+        "collision": 3,
+        "success": 1,
+        "depot": 1,
+        "swap": 1
+      },
+      "junctions": 1,
+      "pads": 1,
+      "initialStatus": "failed",
+      "initialFailure": "collision",
+      "negativeCases": [
+        {
+          "reason": "collision",
+          "count": 3
+        },
+        {
+          "reason": "depot",
+          "count": 1
+        },
+        {
+          "reason": "swap",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Neighbourhood lanes",
+      "checked": 9,
+      "solutions": 1,
+      "minTicks": 6,
+      "solution": {
+        "routes": {
+          "2,1": "R",
+          "4,5": "R"
+        },
+        "waits": {}
+      },
+      "outcomes": {
+        "offroad": 8,
+        "success": 1
+      },
+      "junctions": 2,
+      "pads": 0,
+      "initialStatus": "failed",
+      "initialFailure": "offroad",
+      "negativeCases": [
+        {
+          "reason": "offroad",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "name": "The passing loops",
+      "checked": 9,
+      "solutions": 2,
+      "minTicks": 10,
+      "solution": {
+        "routes": {
+          "2,3": "L",
+          "4,3": "L"
+        },
+        "waits": {}
+      },
+      "outcomes": {
+        "collision": 7,
+        "success": 2
+      },
+      "junctions": 2,
+      "pads": 0,
+      "initialStatus": "failed",
+      "initialFailure": "collision",
+      "negativeCases": [
+        {
+          "reason": "collision",
+          "count": 7
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Twice across",
+      "checked": 36,
+      "solutions": 2,
+      "minTicks": 11,
+      "solution": {
+        "routes": {
+          "2,3": "S",
+          "4,3": "S"
+        },
+        "waits": {
+          "1,3": true,
+          "2,2": false
+        }
+      },
+      "outcomes": {
+        "collision": 18,
+        "success": 2,
+        "depot": 2,
+        "swap": 8,
+        "offroad": 6
+      },
+      "junctions": 2,
+      "pads": 2,
+      "initialStatus": "failed",
+      "initialFailure": "collision",
+      "negativeCases": [
+        {
+          "reason": "collision",
+          "count": 18
+        },
+        {
+          "reason": "depot",
+          "count": 2
+        },
+        {
+          "reason": "swap",
+          "count": 8
+        },
+        {
+          "reason": "offroad",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Around the park",
+      "checked": 486,
+      "solutions": 35,
+      "minTicks": 7,
+      "solution": {
+        "routes": {
+          "3,1": "S",
+          "1,3": "S",
+          "3,3": "S",
+          "5,3": "S",
+          "3,5": "S"
+        },
+        "waits": {
+          "2,3": true
+        }
+      },
+      "outcomes": {
+        "collision": 155,
+        "success": 35,
+        "offroad": 129,
+        "swap": 28,
+        "depot": 139
+      },
+      "junctions": 5,
+      "pads": 1,
+      "initialStatus": "failed",
+      "initialFailure": "collision",
+      "negativeCases": [
+        {
+          "reason": "collision",
+          "count": 155
+        },
+        {
+          "reason": "offroad",
+          "count": 129
+        },
+        {
+          "reason": "swap",
+          "count": 28
+        },
+        {
+          "reason": "depot",
+          "count": 139
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "name": "The winding lane",
+      "checked": 108,
+      "solutions": 4,
+      "minTicks": 18,
+      "solution": {
+        "routes": {
+          "1,3": "S",
+          "3,3": "S",
+          "5,3": "S"
+        },
+        "waits": {
+          "1,2": false,
+          "3,2": false
+        }
+      },
+      "outcomes": {
+        "success": 4,
+        "collision": 45,
+        "swap": 7,
+        "depot": 8,
+        "offroad": 44
+      },
+      "junctions": 3,
+      "pads": 2,
+      "initialStatus": "success",
+      "initialFailure": null,
+      "negativeCases": [
+        {
+          "reason": "collision",
+          "count": 45
+        },
+        {
+          "reason": "swap",
+          "count": 7
+        },
+        {
+          "reason": "depot",
+          "count": 8
+        },
+        {
+          "reason": "offroad",
+          "count": 44
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Depot transfer",
+      "checked": 78732,
+      "solutions": 708,
+      "minTicks": 10,
+      "solution": {
+        "routes": {
+          "1,1": "S",
+          "3,1": "L",
+          "5,1": "S",
+          "1,3": "S",
+          "3,3": "S",
+          "5,3": "S",
+          "1,5": "S",
+          "3,5": "R",
+          "5,5": "S"
+        },
+        "waits": {
+          "2,3": false,
+          "4,3": false
+        }
+      },
+      "outcomes": {
+        "offroad": 72222,
+        "collision": 4626,
+        "depot": 608,
+        "swap": 568,
+        "success": 708
+      },
+      "junctions": 9,
+      "pads": 2,
+      "initialStatus": "failed",
+      "initialFailure": "offroad",
+      "negativeCases": [
+        {
+          "reason": "offroad",
+          "count": 72222
+        },
+        {
+          "reason": "collision",
+          "count": 4626
+        },
+        {
+          "reason": "depot",
+          "count": 608
+        },
+        {
+          "reason": "swap",
+          "count": 568
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Town square",
+      "checked": 2916,
+      "solutions": 28,
+      "minTicks": 8,
+      "solution": {
+        "routes": {
+          "2,1": "S",
+          "4,1": "R",
+          "2,3": "S",
+          "4,3": "L",
+          "2,5": "S",
+          "4,5": "R"
+        },
+        "waits": {
+          "1,1": false,
+          "5,5": false
+        }
+      },
+      "outcomes": {
+        "offroad": 2454,
+        "depot": 322,
+        "collision": 56,
+        "swap": 56,
+        "success": 28
+      },
+      "junctions": 6,
+      "pads": 2,
+      "initialStatus": "failed",
+      "initialFailure": "offroad",
+      "negativeCases": [
+        {
+          "reason": "offroad",
+          "count": 2454
+        },
+        {
+          "reason": "depot",
+          "count": 322
+        },
+        {
+          "reason": "collision",
+          "count": 56
+        },
+        {
+          "reason": "swap",
+          "count": 56
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Across the bridge",
+      "checked": 324,
+      "solutions": 24,
+      "minTicks": 18,
+      "solution": {
+        "routes": {
+          "0,3": "L",
+          "2,3": "R",
+          "4,3": "L",
+          "6,3": "S"
+        },
+        "waits": {
+          "1,3": false,
+          "5,3": false
+        }
+      },
+      "outcomes": {
+        "depot": 149,
+        "offroad": 83,
+        "collision": 52,
+        "swap": 16,
+        "success": 24
+      },
+      "junctions": 4,
+      "pads": 2,
+      "initialStatus": "failed",
+      "initialFailure": "depot",
+      "negativeCases": [
+        {
+          "reason": "depot",
+          "count": 149
+        },
+        {
+          "reason": "offroad",
+          "count": 83
+        },
+        {
+          "reason": "collision",
+          "count": 52
+        },
+        {
+          "reason": "swap",
+          "count": 16
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "The final dispatch",
+      "checked": 17496,
+      "solutions": 72,
+      "minTicks": 8,
+      "solution": {
+        "routes": {
+          "1,1": "L",
+          "3,1": "S",
+          "1,3": "S",
+          "3,3": "R",
+          "5,3": "L",
+          "3,5": "L",
+          "5,5": "R"
+        },
+        "waits": {
+          "2,3": false,
+          "3,2": false,
+          "5,4": false
+        }
+      },
+      "outcomes": {
+        "depot": 571,
+        "offroad": 14152,
+        "collision": 2426,
+        "swap": 275,
+        "success": 72
+      },
+      "junctions": 7,
+      "pads": 3,
+      "initialStatus": "failed",
+      "initialFailure": "depot",
+      "negativeCases": [
+        {
+          "reason": "depot",
+          "count": 571
+        },
+        {
+          "reason": "offroad",
+          "count": 14152
+        },
+        {
+          "reason": "collision",
+          "count": 2426
+        },
+        {
+          "reason": "swap",
+          "count": 275
+        }
+      ]
+    }
+  ]
+}

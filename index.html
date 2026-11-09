@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#b9cfaf" />
+  <meta name="description" content="Tiny Dispatch / 小小快递站 — a two-van routing puzzle. Twelve little towns, one shared clock." />
+  <title>小小快递站 · Tiny Dispatch</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <style>html,body{margin:0;background:#b9cfaf;color:#203c49}#loading{position:fixed;inset:0;display:grid;place-content:center;font:700 20px sans-serif;text-align:center}#loading span{font-size:14px;margin-top:12px}</style>
+</head>
+<body>
+  <div id="loading" role="status">小小快递站 · Tiny Dispatch<span>正在铺好小镇的道路… / Laying out the little town…</span></div>
+  <div id="app" hidden>
+    <header class="header">
+      <div class="brand"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M5 12 20 4l15 8v18l-15 7L5 30Z M5 12l15 8 15-8M20 20v17M13 8l15 8v9"/></svg><h1 id="title"></h1></div>
+      <button id="level-select" class="progress-button"><span id="progress"></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 7 5 5 5-5"/></svg></button>
+      <div class="header-tools"><button id="language" class="plain"></button><button id="sound" class="icon-button"></button><button id="help" class="icon-button"></button></div>
+    </header>
+    <main class="game-layout">
+      <section class="board-zone" aria-label="Road map / 道路地图">
+        <div id="map" class="map"><div id="canvas" aria-hidden="true"></div><div id="signs"></div><div id="pause-cover" hidden><strong id="pause-title"></strong><span id="pause-sub"></span></div></div>
+        <div class="beat-strip"><span id="beat-label"></span><div class="beat-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div><strong id="beat-number">00</strong><span class="van-status a" id="van-a"></span><span class="van-status b" id="van-b"></span></div>
+      </section>
+      <section class="dispatch-desk">
+        <div class="level-heading"><div><span id="level-number"></span><h2 id="level-name"></h2></div><div class="level-nav"><button id="back" class="icon-button"></button><button id="forward" class="icon-button"></button></div></div>
+        <p id="instruction" class="instruction"></p>
+        <div id="feedback" class="feedback" role="status" aria-live="polite"><strong id="feedback-title"></strong><span id="feedback-body"></span></div>
+        <div class="dispatch-actions"><button id="start" class="primary"></button><div class="secondary-row"><button id="pause"></button><button id="retry"></button></div></div>
+        <div class="planning-tools"><button id="undo"></button><button id="reset"></button><button id="hint"></button></div>
+        <p class="route-tip" id="route-tip"></p>
+        <div id="hint-panel" hidden></div>
+        <div class="save-line"><span id="save-status" role="status"></span><button id="save-retry" hidden></button></div>
+      </section>
+    </main>
+    <dialog id="help-dialog"><div class="dialog-top"><h2 id="help-title"></h2><button id="close-help" class="icon-button"></button></div><ol id="rules"></ol></dialog>
+    <dialog id="levels-dialog"><div class="dialog-top"><h2 id="levels-title"></h2><button id="close-levels" class="icon-button"></button></div><div id="level-grid"></div></dialog>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "standaloneBytes": 1299177,
+  "playablesBytes": 1299237,
+  "zipBytes": 363776,
+  "assets": [
+    {
+      "name": "index-CpNKi0Dd.js",
+      "bytes": 33993
+    },
+    {
+      "name": "index-DUHAgMFW.css",
+      "bytes": 13202
+    },
+    {
+      "name": "phaser-BUlrDfUd.js",
+      "bytes": 1194877
+    }
+  ],
+  "e2e": {
+    "startTime": "2026-11-09T18:11:53.730Z",
+    "duration": 40791.46,
+    "expected": 13,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
